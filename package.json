@@ -1,0 +1,18 @@
+{
+  "name": "roadster-seattle-loop",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "data": "node tools/build_route.mjs && node tools/fetch_osm.mjs && node tools/build_world.mjs"
+  },
+  "dependencies": {
+    "three": "0.169.0"
+  },
+  "devDependencies": {
+    "vite": "5.4.10"
+  }
+}
