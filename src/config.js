@@ -63,7 +63,9 @@ export const QUALITY = {
 
 export const settings = loadSettings();
 function loadSettings() {
-  const def = { quality: 'medium', time: 'day', air: 'realistic', traffic: 'medium', units: 'mph', volume: 0.8, police: 'normal', invertY: false };
+  // phones and tablets start on low quality; it can be raised in Settings
+  const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  const def = { quality: coarse ? 'low' : 'medium', time: 'day', air: 'realistic', traffic: 'medium', units: 'mph', volume: 0.8, police: 'normal', invertY: false };
   try { return { ...def, ...JSON.parse(localStorage.getItem('roadster.settings') || '{}') }; } catch { return def; }
 }
 export function saveSettings() {

@@ -14,7 +14,7 @@ npm run dev        # http://localhost:5173
 npm run build      # static build in dist/ (includes public/data)
 ```
 
-You need a desktop browser with WebGL 2. Graphics quality, time of day (day / sunset / overcast / night), traffic density, police aggressiveness, thruster air supply and units are in **Settings**.
+It runs in any browser with WebGL 2. On phones and tablets, on-screen touch controls appear automatically and the game starts on low graphics quality. Landscape works best, and on Android, starting a run switches to full screen. Graphics quality, time of day (day / sunset / overcast / night), traffic density, police aggressiveness, thruster air supply and units are in **Settings**.
 
 ## Controls
 
@@ -31,6 +31,14 @@ You need a desktop browser with WebGL 2. Graphics quality, time of day (day / su
 | Camera (chase / far / hood / cockpit) | V | LB |
 | Reset to road (+5 s) | R | Back |
 | Pause | Esc / P | Start |
+
+On a touch screen, drag the left pad to steer. Gas, Brake, Boost, Lift, Down and Land are on the right, and Pause, Camera, Fans, Reset and Full screen are along the top.
+
+## Replays and clips
+
+When a run ends (finished, destroyed, busted or in the lake), **Watch replay** on the results screen plays the whole run back. You can scrub the timeline, change the speed (0.25× to 4×), and switch between six cameras: chase, trackside, far, orbit, hood and cockpit. Mark a clip with **Set start** / **Set end** (I / O); it defaults to the last 30 s. **Save clip** records it with game audio as a vertical 9:16 or landscape 16:9 video for posting. The video has a race-clock and speed overlay. It is saved as MP4 in Chrome and Edge, and as WebM in other browsers.
+
+The replay is kept in memory only (about 30 MB for a full loop) and is gone once you start a new run.
 
 ## The Roadster
 

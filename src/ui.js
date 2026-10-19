@@ -43,6 +43,7 @@ export class UI {
         <div class="kv"><span>High beams (auto-dip)</span><span><kbd>B</kbd></span></div>
         <div class="kv"><span>Horn · Mute</span><span><kbd>H</kbd> · <kbd>M</kbd></span></div>
         <div class="kv"><span>Pause</span><span><kbd>Esc</kbd> / <kbd>P</kbd></span></div>
+        <div class="kv touch-only"><span>Touch screen</span><span>Drag the left pad to steer. Gas, Brake, Boost, Lift, Down and Land are on the right. Pause, camera, fans and reset are at the top.</span></div>
       </div>
       <h3>Flying</h3>
       <p>Hold <kbd>Space</kbd> to fire the six downward attitude/lift thrusters. Release it and the flight computer holds altitude. In the air, <kbd>W</kbd>/<kbd>S</kbd> tilt the car to translate forward or back, and <kbd>A</kbd>/<kbd>D</kbd> yaw. The reaction-control system keeps the car level on its own and rights it if it tumbles. Press <kbd>L</kbd> to auto-land: the car aligns with the road, then descends under throttle and touches down. Landing on another vehicle damages you. Compressed air is limited (about 260 kg in 600 L of COPVs), and the onboard compressor refills it while you drive. When the reserve is only enough to get down, the car lands automatically.</p>
@@ -71,7 +72,7 @@ export class UI {
       <h1 id="res-title">Busted</h1>
       <div class="sub" id="res-sub"></div>
       <div class="stats" id="res-stats"></div>
-      <div class="row"><button class="btn primary" data-act="restart">Run again</button><button class="btn" data-act="quit">Main menu</button></div>
+      <div class="row"><button class="btn primary" data-act="restart">Run again</button><button class="btn" data-act="replay" id="res-replay">Watch replay</button><button class="btn" data-act="quit">Main menu</button></div>
     </div>
     <div class="hud" id="hud">
       <div class="box tl">

@@ -18,6 +18,7 @@ import { Vegetation } from './world/vegetation.js';
 import { Landmarks } from './world/landmarks.js';
 import { FX } from './fx/particles.js';
 import { Game } from './game.js';
+import { TouchControls, goFullscreen } from './touch.js';
 
 const app = document.getElementById('app');
 const quality = QUALITY[settings.quality] || QUALITY.medium;
@@ -30,18 +31,21 @@ const input = new Input();
 const ui = new UI(app, {
   click: () => audio.click(),
   action(act) {
-    if (act === 'start') game?.start();
+    if (act === 'start') { if (touch.on) goFullscreen(); game?.start(); }
     else if (act === 'controls' || act === 'specs' || act === 'settings' || act === 'records') { prevScreen = ui.current === 'pause' ? 'pause' : 'menu'; game && (game.prevScreen = prevScreen); ui.show(act); }
     else if (act === 'back') ui.show(prevScreen);
     else if (act === 'resume') game?.resume();
-    else if (act === 'restart') { game?.start(); }
+    else if (act === 'restart') { if (touch.on) goFullscreen(); game?.start(); }
     else if (act === 'quit') game?.toMenu();
+    else if (act === 'replay') game?.replay.enter();
   },
   settingChanged(key) {
     if (key === 'volume') audio.setVolume(settings.volume);
     if (key === 'time' && game) game.applyTime();
   },
 });
+
+const touch = new TouchControls(input, document.getElementById('hud'));
 
 const yieldFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
 
@@ -95,7 +99,21 @@ async function boot() {
   bloom.enabled = quality.bloom;
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
+  // fixed render size while a replay clip is exported (the canvas is letterboxed on screen)
+  let fixed = null;
+  game.viewport = {
+    set(w, h) { fixed = [w, h]; renderer.domElement.classList.add('fixed'); resize(); },
+    reset() { fixed = null; renderer.domElement.classList.remove('fixed'); resize(); },
+  };
   const resize = () => {
+    if (fixed) {
+      const [w, h] = fixed;
+      renderer.setPixelRatio(1); composer.setPixelRatio(1);
+      renderer.setSize(w, h, false); composer.setSize(w, h);
+      camera.aspect = w / h; camera.updateProjectionMatrix();
+      return;
+    }
+    renderer.setPixelRatio(quality.pixelRatio); composer.setPixelRatio(quality.pixelRatio);
     renderer.setSize(innerWidth, innerHeight);
     composer.setSize(innerWidth, innerHeight);
     camera.aspect = innerWidth / innerHeight;
@@ -116,6 +134,7 @@ async function boot() {
     try {
       game.update(dt);
       composer.render(dt);
+      game.replay.afterRender(renderer.domElement);
     } catch (e) {
       console.error(e);
     }

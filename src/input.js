@@ -12,6 +12,7 @@ export class Input {
     addEventListener('keyup', (e) => this.keys.delete(e.code));
     addEventListener('blur', () => this.keys.clear());
     this.padPrev = {};
+    this.touchSteer = null; // analog steering from the touch pad (TouchControls)
   }
   down(...codes) { return codes.some((c) => this.keys.has(c)); }
   // returns true once per key press
@@ -30,6 +31,7 @@ export class Input {
     if (st === 0) s.steer = toward(s.steer, 0, 6);
     else if (s.steer !== 0 && Math.sign(st) !== Math.sign(s.steer)) s.steer = toward(s.steer, 0, 9);
     else s.steer = toward(s.steer, st, 3.4);
+    if (this.touchSteer !== null) s.steer = this.touchSteer;
     s.boost = k.down('ShiftLeft', 'ShiftRight') ? 1 : 0;
     s.lift = k.down('Space') ? 1 : 0;
     s.descend = k.down('KeyC', 'ControlLeft', 'ControlRight') ? 1 : 0;

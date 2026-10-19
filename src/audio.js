@@ -14,6 +14,7 @@ export class Audio {
     this.master = ctx.createGain(); this.master.gain.value = this.muted ? 0 : this.volume;
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 4;
     this.master.connect(comp).connect(ctx.destination);
+    this.out = comp;
     this.noise = this.makeNoise(2);
     this.brown = this.makeNoise(2, true);
 
@@ -63,6 +64,14 @@ export class Audio {
     const sc = ctx.createBiquadFilter(); sc.type = 'bandpass'; sc.frequency.value = 3200; sc.Q.value = 1.5;
     this.loop(this.noise).connect(sc).connect(this.scrapeGain);
     this.radarT = 0;
+  }
+
+  // a MediaStream of the mixed game audio (for video export); captureStream(false) releases it
+  captureStream(on = true) {
+    if (!this.ctx) return null;
+    if (!on) { if (this.dest) { this.out.disconnect(this.dest); this.dest = null; } return null; }
+    if (!this.dest) { this.dest = this.ctx.createMediaStreamDestination(); this.out.connect(this.dest); }
+    return this.dest.stream;
   }
 
   gain(v) { const g = this.ctx.createGain(); g.gain.value = v; g.connect(this.master); return g; }

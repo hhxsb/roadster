@@ -9,6 +9,7 @@ import { CameraRig } from './camera.js';
 import { Minimap } from './minimap.js';
 import { fmtTime } from './ui.js';
 import { KIND } from './data.js';
+import { Replay } from './replay.js';
 
 const DT = 1 / GAME.physicsHz;
 const LEG_LABEL = { i5: 'I-5 South', i90: 'I-90 East', i405: 'I-405 North', sr520: 'SR 520 West' };
@@ -43,6 +44,7 @@ export class Game {
       this.cps.push({ s, x: f.x, z: f.z, y: f.y });
     }
     this.makeGates();
+    this.replay = new Replay(this);
     this.acc = 0;
     this.best = this.loadBest();
     this.ui.setMenuBest(this.best);
@@ -142,6 +144,7 @@ export class Game {
     this.collisions = 0;
     this.tunnelHint = false;
     this.ui.countdown('');
+    if (menu) this.replay.stop(); else this.replay.begin();
     this.model.userData.paint.color.set(PAINT);
     this.model.visible = true;
     this.traffic.init(s0);
@@ -174,6 +177,13 @@ export class Game {
   update(dt) {
     if (window.__timescale) dt *= window.__timescale;
     const inp = this.input;
+    if (this.state === 'replay') {
+      const rdt = this.replay.update(dt);
+      this.trafficUniforms.uTime.value += rdt;
+      this.render(rdt);
+      inp.endFrame();
+      return;
+    }
     this.trafficUniforms.uTime.value += dt;
     if (inp.hit('Escape') || inp.hit('KeyP')) {
       if (this.state === 'paused') this.resume();
@@ -205,6 +215,7 @@ export class Game {
     if (live && this.state !== 'paused') {
       this.simulate(dt, control);
       if (this.state === 'playing') this.time += dt;
+      this.replay.record(dt);
     } else if (this.state === 'menu') {
       // idle traffic in the background of the menu
       this.traffic.update(dt, this.prog, []);
@@ -433,6 +444,8 @@ export class Game {
 
   showResult() {
     this.resultShown = true;
+    this.replay.stop();
+    document.getElementById('res-replay').style.display = this.replay.available ? '' : 'none';
     const stats = [['Time', fmtTime(this.time)], ['Distance', `${(Math.max(0, this.prog) / 1609.34).toFixed(1)} mi`], ['Top speed', `${Math.round(this.topSpeed / MPH)} mph`], ['Collisions', this.collisions]];
     this.ui.hud(false);
     if (this.outcome === 'finish') {
@@ -522,7 +535,8 @@ export class Game {
       else { if (slip > 0.25) this.fx.tireSmoke(w.wpos.clone(), p.vel, slip); this.fx.skid(i, w.wpos, right, slip); }
     });
     // camera
-    if (this.state === 'menu' || (this.state === 'over' && this.outcome !== 'finish' && this.overT > 0.4)) this.rig.update(dt, p, false, { orbit: true, radius: this.state === 'menu' ? 9 : 16, height: this.state === 'menu' ? 2.2 : 5 });
+    if (this.state === 'replay') this.replay.camera(dt);
+    else if (this.state === 'menu' || (this.state === 'over' && this.outcome !== 'finish' && this.overT > 0.4)) this.rig.update(dt, p, false, { orbit: true, radius: this.state === 'menu' ? 9 : 16, height: this.state === 'menu' ? 2.2 : 5 });
     else this.rig.update(dt, p, false, { boost: f.main > 0.1 });
     // world systems
     const cp = this.camera.position;
@@ -533,19 +547,23 @@ export class Game {
     this.sys.landmarks.update(cp);
     this.fx.update(dt, (pos) => this.world.surfaceAt(pos.x, pos.z, pos.y + 2).y);
     // vehicles
-    this.traffic.renderer.begin();
-    this.traffic.render(this.night);
-    this.traffic.renderer.end();
-    this.police.render();
+    if (this.state === 'replay') this.replay.renderVehicles();
+    else {
+      this.traffic.renderer.begin();
+      this.traffic.render(this.night);
+      this.traffic.renderer.end();
+      this.police.render();
+    }
     // audio
     let siren = 0, radar = 0;
-    for (const u of this.police.units) {
+    if (this.state === 'replay') siren = this.replay.siren;
+    else for (const u of this.police.units) {
       const d = u.pos.distanceTo(p.pos);
       if (u.siren) siren = Math.max(siren, Math.min(1, 160 / Math.max(20, d)));
       if (u.mode === 'parked') radar = Math.max(radar, 1 - d / GAME.radarRange);
     }
     const slip = Math.max(...p.wheels.map((w) => (w.contact && w.surface !== 'terrain' ? Math.max(w.latSlip, Math.min(1, w.slip)) : 0)));
-    this.audio.update({ dt, speed: p.speed, power: p.motorPower || 0, slip, thrust: f.main + f.lift * 0.7 + f.rcs * 0.15, fans: p.fans && p.groundContacts > 0 ? 1 : 0, siren, scrape: p.scrape || 0, grounded: p.groundContacts > 0, radar: this.state === 'playing' ? radar : 0, paused: this.state === 'paused' || this.state === 'menu' });
+    this.audio.update({ dt, speed: p.speed, power: p.motorPower || 0, slip, thrust: f.main + f.lift * 0.7 + f.rcs * 0.15, fans: p.fans && p.groundContacts > 0 ? 1 : 0, siren, scrape: p.scrape || 0, grounded: p.groundContacts > 0, radar: this.state === 'playing' ? radar : 0, paused: this.state === 'paused' || this.state === 'menu' || (this.state === 'replay' && this.replay.paused) });
     // near misses
     if (this.state === 'playing') {
       for (const v of this.traffic.vehicles) {
